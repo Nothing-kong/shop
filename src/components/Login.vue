@@ -64,13 +64,13 @@ export default {
   },
   methods: {
     //重置表单
-    resetLoginForm(){
+    resetLoginForm () {
       //resetFields:element-ui提供的方法 重置表单
       // console.log(this)  当前表单对象
       this.$refs.loginFormRef.resetFields()
     },
     //表单登录预验证
-    login(){
+    login () {
       this.$refs.loginFormRef.validate(  async valid => {
         // console.log(valid)
         if (!valid) return false
@@ -79,7 +79,7 @@ export default {
         // 返回值为promise，可加await简化操作 相应的也要加async
         const { data : res } = await this.$http.post("login", this.loginForm)
         // 登录提示弹窗
-        if (res.meta.status !== 200) return this.$message.error('登录失败') 
+        if (res.meta.status !== 200) return this.$message.error('登录失败')
         this.$message.success('登录成功')
         // console.log(res)
         // 1、将登陆成功之后的token, 保存到客户端的sessionStorage中; localStorage中是持久化的保存
@@ -87,7 +87,7 @@ export default {
         //   1.2 token 只应在当前网站打开期间生效，所以将token保存在sessionStorage中
         window.sessionStorage.setItem('token', res.data.token)
         // 2、通过编程式导航跳转到后台主页, 路由地址为：/home
-        this.$router.push("/home")
+        this.$router.push ("/home")
       })
     }
   },
