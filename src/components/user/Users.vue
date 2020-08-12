@@ -32,12 +32,15 @@
           </template>
         </el-table-column>
         <el-table-column label='操作' width="180px">
-          <template >
+          <template slot-scope="scope">
+            <!-- 修改按钮 -->
             <el-button
               type="primary"
               icon="el-icon-edit"
               size="mini"
+              @click="showEditDialog(scope.row.id)"
             ></el-button>
+            <!-- 删除按钮 -->
             <el-button
               type="danger"
               icon="el-icon-delete"
@@ -50,6 +53,7 @@
               :enterable="false"
               placement="top"
             >
+            <!-- 分配角色按钮 -->
               <el-button
                 type="warning"
                 icon="el-icon-setting"
@@ -96,7 +100,32 @@
       </el-form>
       <span slot="footer" class="dialog-footer">
         <el-button @click="addDialogVisible = false">取 消</el-button>
-        <el-button type="primary" @click="addDialogVisible = false">确 定</el-button>
+        <el-button type="primary" @click="addUser" >确 定</el-button>
+      </span>
+    </el-dialog>
+    <!-- 修改用户的对话框 -->
+    <el-dialog title="修改用户信息" :visible.sync="editDialogVisible"  @close='editDialogClosed' width="50%">
+      <!-- 内容主体 -->
+      <el-form
+        :model="editUserForm"
+        ref="editUserFormRef"
+        label-width="70px"
+        :rules="editUserFormRules"
+        status-icon
+      >
+        <el-form-item label="用户名">
+          <el-input v-model="editUserForm.username" disabled></el-input>
+        </el-form-item>
+        <el-form-item label="邮箱" prop="email">
+          <el-input v-model="editUserForm.email"></el-input>
+        </el-form-item>
+        <el-form-item label="手机" prop="mobile">
+          <el-input v-model="editUserForm.mobile"></el-input>
+        </el-form-item>
+      </el-form>
+      <span slot="footer" class="dialog-footer">
+        <el-button @click="editDialogVisible = false">取 消</el-button>
+        <el-button type="primary" @click="editUser">确 定</el-button>
       </span>
     </el-dialog>
   </div>
@@ -143,6 +172,7 @@ export default {
         email: '',
         mobile: ''
       },
+      // 添加用户信息验证规则
       addUserFormRules:{
         username: [
           { required: true, message: '请输入用户名', trigger: 'blur' },
@@ -170,7 +200,22 @@ export default {
           { required: true, message: '请输入手机号码', trigger: 'blur' },
           { validator: checkMobile, trigger: 'blur' }
         ]
-    }
+      },
+      // 修改用户对话框的显示与隐藏
+      editDialogVisible:false,
+      //查询到的用户信息
+      editUserForm:{},
+      // 修改用户信息的表单验证
+      editUserFormRules:{
+        email: [
+          { required: true, message: '请输入邮箱', trigger: 'blur' },
+          { validator: checkEmail, trigger: 'blur' }
+        ],
+        mobile: [
+          { required: true, message: '请输入手机号码', trigger: 'blur' },
+          { validator: checkMobile, trigger: 'blur' }
+        ]
+      }
     }
   },
   created() {
@@ -208,6 +253,53 @@ export default {
     addDialogClosed () {
       this.$refs.addUserFormRef.resetFields()
     },
+    // 点击添加按钮，增加新用户
+    addUser(){
+      this.$refs.addUserFormRef.validate(  async valid => {
+        // console.log(valid)
+        // 表单验证失败
+        if (!valid) return false
+        // 发送添加用户的网路请求
+        const { data : res } = await this.$http.post("users", this.addUserForm)
+        // console.log(res)
+        if (res.meta.status !== 201) return this.$message.error(res.meta.msg)
+        this.$message.success(res.meta.msg)
+        // 隐藏添加用户对话框
+        this.addDialogVisible = false
+        this.getUserList()
+      })
+    },
+    // 编辑用户信息
+    async showEditDialog(id){
+      const { data : res } = await this.$http.get('users/' + id)
+      if ( res.meta.status !== 200) {
+        return this.$message.error( res.meta.msg)
+      }
+      this.editUserForm = res.data
+      this.editDialogVisible = true
+    },
+    // 监听修改用户对话框的关闭事件
+    editDialogClosed () {
+      this.$refs.editUserFormRef.resetFields()
+    },
+    // 修改用户信息
+    editUser(){
+      this.$refs.editUserFormRef.validate( async valid => {
+        if (!valid) return
+        //发起修改用户信息的请求
+        const { data : res } = await this.$http.put('users/' + this.editUserForm.id,{
+          email:this.editUserForm.email,
+          mobile:this.editUserForm.mobile,
+        })
+        if (res.meta.status !== 200) return this.$message.error(res.meta.msg)
+        // 关闭对话框
+        this.editDialogVisible = false
+        // 刷新数据列表
+        this.getUserList()
+        // 提示修改成功
+        this.$message.success(res.meta.msg)
+      })
+    }
   },
 }
 </script>
